@@ -135,15 +135,15 @@ async def cmd_exchange_list(bot: Bot, ev: Event):
     lines = ["[GF2] 可兑换物品列表", ""]
     for item in exchange_list:
         eid = str(item.get("exchange_id", ""))
-        name = item.get("name", eid)
-        stock = item.get("stock", 0)
-        score = item.get("score", 0)
+        name = item.get("item_name", eid)
+        remaining = item.get("max_exchange_count", 0) - item.get("exchange_count", 0)
+        score = item.get("use_score", 0)
         mark = ""
         if eid in personal_items:
             mark = " ★(个人)"
         elif eid in global_items:
             mark = " ☆(全局)"
-        lines.append(f"  [{eid}] {name}  |  {score}积分  |  库存:{stock}{mark}")
+        lines.append(f"  [{eid}] {name}  |  {score}积分  |  剩余:{remaining}{mark}")
 
     personal_display = ", ".join(personal_items) if personal_items else "(未设置，使用全局)"
     global_display = ", ".join(global_items) if global_items else "(未设置)"

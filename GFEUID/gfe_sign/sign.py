@@ -120,12 +120,13 @@ async def one_click_community(user: GfeUser) -> dict:
                     exchange_list = exchange_data.get("list", [])
                     for item in exchange_list:
                         eid = str(item.get("exchange_id", ""))
-                        if eid in items_to_exchange and item.get("stock", 0) > 0:
+                        remaining = item.get("max_exchange_count", 0) - item.get("exchange_count", 0)
+                        if eid in items_to_exchange and remaining > 0:
                             try:
                                 await exchange(user.server, user.web_token, int(eid))
                                 result["exchange_done"] += 1
                                 result["exchange_items"].append(
-                                    item.get("name", eid)
+                                    item.get("item_name", eid)
                                 )
                             except Exception:
                                 continue
