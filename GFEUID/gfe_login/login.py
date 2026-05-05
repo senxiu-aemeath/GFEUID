@@ -4,6 +4,7 @@ import asyncio
 import hashlib
 import os
 import re
+import time
 from pathlib import Path
 
 import httpx
@@ -24,6 +25,7 @@ from ..utils.gfe_api import (
     send_sms_code,
     login_by_sms,
     login_by_password,
+    login_by_game_token,
     get_user_info,
 )
 from ..utils.database.models import GfeBind, GfeUser
@@ -77,6 +79,58 @@ async def _send_login_msg(bot: Bot, ev: Event, url: str):
         )
 
 
+async def _identify_token(token: str) -> dict:
+    """尝试识别 token 类型并验证，返回绑定结果或抛出异常"""
+    for srv in ("cn", "intl"):
+        # 尝试 1: 直接作为 BBS webToken
+        try:
+            info = await get_user_info(srv, token)
+            if info.get("uid"):
+                return {"server": srv, "login_type": "web_token", "info": info, "web_token": token}
+        except Exception:
+            pass
+
+        # 尝试 2: 作为 game AccessToken 换取 webToken
+        try:
+            web_token = await login_by_game_token(srv, token)
+            info = await get_user_info(srv, web_token)
+            if info.get("uid"):
+                return {
+                    "server": srv,
+                    "login_type": "game_token",
+                    "info": info,
+                    "web_token": web_token,
+                    "access_token": token,
+                }
+        except Exception:
+            continue
+
+    raise RuntimeError("Token 无效，请检查后重试")
+
+
+async def _save_binding(user_id: str, bot_id: str, server: str, login_type: str,
+                        web_token: str, info: dict, access_token: str = ""):
+    """保存或更新用户绑定数据"""
+    common = {
+        "user_id": user_id,
+        "bot_id": bot_id,
+        "uid": info["uid"],
+        "nickname": info["nickname"],
+        "web_token": web_token,
+        "server": server,
+        "login_type": login_type,
+        "last_bind_time": int(time.time()),
+    }
+
+    existing = await GfeUser.select_by_user(user_id, bot_id)
+    if existing:
+        await GfeUser.update_data(**common)
+    else:
+        await GfeUser.insert_data(**common)
+
+    await GfeBind.insert_gfe_uid(user_id, bot_id, info["uid"], server)
+
+
 async def page_login(bot: Bot, ev: Event):
     url, is_local = await _get_url()
     user_token = _get_token(ev.user_id)
@@ -112,64 +166,40 @@ async def page_login(bot: Bot, ev: Event):
         cache.delete(user_token)
         return await bot.send("[GF2] 登录超时！", at_sender=at_sender)
 
-    # 登录完成，保存用户数据
     server = result.get("server", "cn")
     method = result.get("method", "")
     account = result.get("account", "")
     user_id = result.get("user_id", "")
+    login_type = method
+    access_token = ""
 
     try:
         if method == "sms":
             web_token = await login_by_sms(server, account, result.get("code", ""))
-        else:
+        elif method == "password":
             web_token = await login_by_password(server, account, result.get("password", ""))
+        elif method == "token":
+            token_value = result.get("token_value", "")
+            ident = await _identify_token(token_value)
+            web_token = ident["web_token"]
+            login_type = ident["login_type"]
+            access_token = ident.get("access_token", "")
+            server = ident["server"]
+        else:
+            return await bot.send(f"[GF2] 未知登录方式: {method}", at_sender=at_sender)
 
         info = await get_user_info(server, web_token)
-
-        user = GfeUser()
-        user.user_id = user_id
-        user.bot_id = ev.bot_id
-        user.uid = info["uid"]
-        user.nickname = info["nickname"]
-        user.web_token = web_token
-        user.server = server
-        user.login_type = method
-        import time
-        user.last_bind_time = int(time.time())
-
-        existing = await GfeUser.select_by_user(user_id, ev.bot_id)
-        if existing:
-            await GfeUser.update_data(
-                user_id=user_id,
-                bot_id=ev.bot_id,
-                uid=info["uid"],
-                nickname=info["nickname"],
-                web_token=web_token,
-                server=server,
-                login_type=method,
-                last_bind_time=int(time.time()),
-            )
-        else:
-            await GfeUser.insert_data(
-                user_id=user_id,
-                bot_id=ev.bot_id,
-                uid=info["uid"],
-                nickname=info["nickname"],
-                web_token=web_token,
-                server=server,
-                login_type=method,
-                last_bind_time=int(time.time()),
-            )
-
-        await GfeBind.insert_gfe_uid(user_id, ev.bot_id, info["uid"], server)
+        await _save_binding(user_id, ev.bot_id, server, login_type, web_token, info, access_token)
 
         server_name = "国服" if server == "cn" else "国际服"
+        type_map = {"sms": "短信验证码", "password": "账号密码", "web_token": "WebToken", "game_token": "AccessToken"}
+        extra = "  |  已解锁抽卡功能" if login_type == "game_token" else ""
         return await bot.send(
             f"[GF2] 登录绑定成功！\n"
             f"服务器：{server_name}\n"
             f"昵称：{info['nickname']}\n"
             f"UID：{info['uid']}\n"
-            f"登录方式：{'短信验证码' if method == 'sms' else '账号密码'}",
+            f"方式：{type_map.get(login_type, login_type)}{extra}",
             at_sender=at_sender,
         )
 
@@ -202,6 +232,36 @@ async def gfe_login_page(token: str):
     html = _read_template("gfe/login/index.html")
     html = html.replace("{{ token }}", token)
     html = html.replace("{{ user_id }}", state.get("user_id", ""))
+
+    # 检查用户是否已有绑定
+    user_id = state.get("user_id", "")
+    bot_id = state.get("bot_id", "")
+    try:
+        user = await GfeUser.select_by_user(user_id, bot_id)
+        if user and user.web_token:
+            server_name = "国服" if user.server == "cn" else "国际服"
+            type_map = {"sms": "短信验证码", "password": "账号密码", "web_token": "WebToken", "game_token": "AccessToken"}
+            html = html.replace("{{ has_binding }}", "true")
+            html = html.replace("{{ bind_nickname }}", user.nickname or "")
+            html = html.replace("{{ bind_uid }}", user.uid or "")
+            html = html.replace("{{ bind_server }}", server_name)
+            html = html.replace("{{ bind_login_type }}", type_map.get(user.login_type, user.login_type or "未知"))
+            html = html.replace("{{ bind_has_game_token }}", "true" if user.login_type == "game_token" else "false")
+        else:
+            html = html.replace("{{ has_binding }}", "false")
+            html = html.replace("{{ bind_nickname }}", "")
+            html = html.replace("{{ bind_uid }}", "")
+            html = html.replace("{{ bind_server }}", "")
+            html = html.replace("{{ bind_login_type }}", "")
+            html = html.replace("{{ bind_has_game_token }}", "false")
+    except Exception:
+        html = html.replace("{{ has_binding }}", "false")
+        html = html.replace("{{ bind_nickname }}", "")
+        html = html.replace("{{ bind_uid }}", "")
+        html = html.replace("{{ bind_server }}", "")
+        html = html.replace("{{ bind_login_type }}", "")
+        html = html.replace("{{ bind_has_game_token }}", "false")
+
     return HTMLResponse(html)
 
 
@@ -213,6 +273,7 @@ class SubmitModel(BaseModel):
     account: str = ""
     code: str = ""
     password: str = ""
+    token_value: str = ""
 
 
 @app.post("/gfe/submit")
@@ -222,6 +283,44 @@ async def gfe_login_submit(data: SubmitModel):
         return {"success": False, "msg": "登录超时，请重新发送 gfe登录"}
 
     step = data.step
+    user_id = state.get("user_id", "")
+    bot_id = state.get("bot_id", "")
+
+    # ── 删除绑定（已绑定用户在页面操作）──
+
+    if step == "delete_binding":
+        try:
+            user = await GfeUser.select_by_user(user_id, bot_id)
+            if user:
+                await GfeUser.delete_user(user_id, bot_id)
+            return {"success": True, "msg": "已删除绑定", "reset": True}
+        except Exception as e:
+            return {"success": False, "msg": f"删除失败: {e}"}
+
+    # ── 升级绑定（已有账号，补充绑定 game token）──
+
+    if step == "upgrade_token":
+        token_value = (data.token_value or "").strip()
+        if not token_value:
+            return {"success": False, "msg": "请输入 Token"}
+        try:
+            ident = await _identify_token(token_value)
+            web_token = ident["web_token"]
+            info = ident["info"]
+            server = ident["server"]
+            login_type = ident["login_type"]
+            access_token_val = ident.get("access_token", "")
+            await _save_binding(user_id, bot_id, server, login_type, web_token, info, access_token_val)
+            type_map = {"web_token": "WebToken", "game_token": "AccessToken"}
+            extra = "，已解锁抽卡功能" if login_type == "game_token" else ""
+            return {
+                "success": True,
+                "msg": f"升级成功：{info['nickname']} ({type_map.get(login_type, login_type)}){extra}",
+            }
+        except Exception as e:
+            return {"success": False, "msg": f"Token 验证失败: {e}"}
+
+    # ── 选择服务器 ──
 
     if step == "select_server":
         if data.server not in ("cn", "intl"):
@@ -231,18 +330,26 @@ async def gfe_login_submit(data: SubmitModel):
         cache.set(data.token, state)
         return {"success": True, "next": "select_method"}
 
+    # ── 选择登录方式 ──
+
     elif step == "select_method":
-        if data.method not in ("sms", "password"):
+        if data.method not in ("sms", "password", "token"):
             return {"success": False, "msg": "请选择有效的登录方式"}
         state["method"] = data.method
         if data.method == "sms":
             state["step"] = "input_account"
             cache.set(data.token, state)
             return {"success": True, "next": "input_account"}
+        elif data.method == "token":
+            state["step"] = "input_token"
+            cache.set(data.token, state)
+            return {"success": True, "next": "input_token"}
         else:
             state["step"] = "input_password"
             cache.set(data.token, state)
             return {"success": True, "next": "input_password"}
+
+    # ── 短信 ──
 
     elif step == "send_sms":
         account = data.account.strip()
@@ -267,6 +374,8 @@ async def gfe_login_submit(data: SubmitModel):
         cache.set(data.token, state)
         return {"success": True, "msg": "登录成功！请返回聊天窗口查看"}
 
+    # ── 密码 ──
+
     elif step == "verify_password":
         account = data.account.strip()
         password = data.password
@@ -279,5 +388,28 @@ async def gfe_login_submit(data: SubmitModel):
         state["step"] = "done"
         cache.set(data.token, state)
         return {"success": True, "msg": "登录成功！请返回聊天窗口查看"}
+
+    # ── Token 登录 ──
+
+    elif step == "verify_token":
+        token_value = (data.token_value or "").strip()
+        if not token_value:
+            return {"success": False, "msg": "请输入 Token"}
+        try:
+            ident = await _identify_token(token_value)
+            # 将识别结果写入 state，page_login 轮询获取
+            state["token_value"] = token_value
+            state["server"] = ident["server"]
+            state["method"] = "token"  # page_login 根据这个调 _identify_token_async
+            state["step"] = "done"
+            cache.set(data.token, state)
+            type_map = {"web_token": "WebToken", "game_token": "AccessToken"}
+            extra = "，可同时用于社区和抽卡记录" if ident["login_type"] == "game_token" else ""
+            return {
+                "success": True,
+                "msg": f"Token 验证成功（{type_map.get(ident['login_type'], ident['login_type'])}）{extra}\n请返回聊天窗口查看",
+            }
+        except Exception as e:
+            return {"success": False, "msg": f"Token 验证失败: {e}"}
 
     return {"success": False, "msg": "无效的步骤"}

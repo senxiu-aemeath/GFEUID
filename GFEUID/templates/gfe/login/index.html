@@ -13,7 +13,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    overflow: hidden;
+    overflow-y: auto;
   }
   body::before {
     content: "";
@@ -23,7 +23,6 @@
     background: linear-gradient(135deg, #1a1c24 0%, #2d2f3a 50%, #1e2030 100%);
     z-index: -2;
   }
-  /* 装饰性对角线 */
   body::after {
     content: "";
     position: fixed;
@@ -42,10 +41,11 @@
     border: 1px solid rgba(230, 180, 80, 0.2);
     border-radius: 12px;
     padding: 2rem;
-    width: 380px;
+    width: 400px;
     max-width: 95vw;
     box-shadow: 0 0 60px rgba(230, 180, 80, 0.08), 0 8px 32px rgba(0,0,0,0.4);
     backdrop-filter: blur(12px);
+    margin: 1rem 0;
   }
   .logo {
     text-align: center;
@@ -101,6 +101,7 @@
     transition: all 0.2s;
     font-size: 0.95rem;
     width: 100%;
+    text-align: left;
   }
   .option-btn:hover {
     background: rgba(230, 180, 80, 0.08);
@@ -112,11 +113,54 @@
     border-color: #e6b450;
     color: #e6b450;
   }
+  .option-btn.recommended {
+    border-color: rgba(76, 175, 80, 0.4);
+  }
+  .option-btn.recommended::after {
+    content: "推荐";
+    margin-left: auto;
+    font-size: 0.7rem;
+    background: rgba(76, 175, 80, 0.2);
+    color: #4caf50;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
   .option-icon {
     width: 24px; height: 24px;
     margin-right: 0.75rem;
     font-size: 1.2rem;
     text-align: center;
+    flex-shrink: 0;
+  }
+
+  /* Status card */
+  .status-card {
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.25rem;
+  }
+  .status-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.35rem 0;
+    font-size: 0.9rem;
+  }
+  .status-row .label { color: rgba(255,255,255,0.5); }
+  .status-row .value { color: #fff; font-weight: 500; }
+  .badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .badge-full { background: rgba(76, 175, 80, 0.15); color: #4caf50; }
+  .badge-partial { background: rgba(230, 180, 80, 0.15); color: #e6b450; }
+
+  .divider {
+    border: none;
+    border-top: 1px solid rgba(255,255,255,0.06);
+    margin: 0.75rem 0;
   }
 
   .input-group { margin-bottom: 1rem; }
@@ -165,8 +209,16 @@
     background: transparent;
     color: rgba(255,255,255,0.5);
     margin-top: 0.5rem;
+    font-size: 0.9rem;
   }
   .btn-secondary:hover { color: #fff; }
+  .btn-danger {
+    background: transparent;
+    color: rgba(210, 60, 50, 0.5);
+    margin-top: 0.25rem;
+    font-size: 0.85rem;
+  }
+  .btn-danger:hover { color: #d23c32; }
   .btn-code {
     width: auto;
     white-space: nowrap;
@@ -192,6 +244,14 @@
   .msg.success { color: #4caf50; }
   .msg.info { color: rgba(255,255,255,0.5); }
 
+  .hint {
+    color: rgba(255,255,255,0.35);
+    font-size: 0.75rem;
+    line-height: 1.5;
+    margin-bottom: 0.75rem;
+  }
+  .hint strong { color: rgba(255,255,255,0.5); }
+
   .user-id {
     text-align: center;
     color: rgba(255,255,255,0.3);
@@ -208,6 +268,35 @@
     cursor: pointer;
   }
   .back-link:hover { color: rgba(255,255,255,0.6); }
+
+  .token-info {
+    background: rgba(255,255,255,0.03);
+    border: 1px solid rgba(255,255,255,0.06);
+    border-radius: 6px;
+    padding: 0.6rem 0.8rem;
+    font-size: 0.7rem;
+    color: rgba(255,255,255,0.3);
+    line-height: 1.5;
+    margin-top: 0.75rem;
+  }
+
+  .confirm-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    z-index: 10;
+  }
+  .confirm-box {
+    background: #2a2c36;
+    border: 1px solid rgba(210, 60, 50, 0.3);
+    border-radius: 10px;
+    padding: 1.5rem;
+    width: 320px;
+    text-align: center;
+  }
+  .confirm-box p { color: #ccc; margin-bottom: 1rem; font-size: 0.9rem; }
+  .confirm-box .btns { display: flex; gap: 0.5rem; }
+  .confirm-box .btns button { flex: 1; }
 </style>
 </head>
 <body>
@@ -218,8 +307,55 @@
     <p>少女前线2：追放 · 登录绑定</p>
   </div>
 
-  <!-- Step 1: 选择服务器 -->
-  <div class="step active" id="step-server">
+  <!-- ── Step 0: 已绑定用户 ─────────────────────────────── -->
+  <div class="step" id="step-bound">
+    <div class="step-title">已绑定账号</div>
+    <div class="status-card">
+      <div class="status-row">
+        <span class="label">昵称</span>
+        <span class="value">{{ bind_nickname }}</span>
+      </div>
+      <div class="status-row">
+        <span class="label">UID</span>
+        <span class="value">{{ bind_uid }}</span>
+      </div>
+      <div class="status-row">
+        <span class="label">服务器</span>
+        <span class="value">{{ bind_server }}</span>
+      </div>
+      <div class="status-row">
+        <span class="label">登录方式</span>
+        <span class="value">{{ bind_login_type }}</span>
+      </div>
+      <div class="status-row">
+        <span class="label">抽卡权限</span>
+        <span class="value" id="gacha-badge"></span>
+      </div>
+    </div>
+
+    <!-- 未绑定 game token：显示升级入口 -->
+    <div id="upgrade-section" style="display:none;">
+      <hr class="divider">
+      <div class="step-title" style="font-size:0.9rem;">🎫 绑定游戏 AccessToken</div>
+      <p class="hint">绑定后可<strong>同时解锁社区和抽卡记录</strong>功能<br>支持 BBS WebToken 或游戏 AccessToken 自动识别</p>
+      <div class="input-group">
+        <input type="text" id="upgrade-token" placeholder="粘贴 Token 到这里">
+      </div>
+      <button class="btn btn-primary" onclick="upgradeToken()">提交升级</button>
+      <div class="msg" id="msg-upgrade"></div>
+      <div class="token-info">
+        获取方式：PC端搜索 Player.log 中的 access_token；或使用 gf2gacha 工具捕获
+      </div>
+    </div>
+
+    <hr class="divider">
+    <button class="btn btn-secondary" onclick="startRelogin()">← 切换账号 / 重新登录</button>
+    <button class="btn btn-danger" onclick="showDeleteConfirm()">删除绑定</button>
+    <div class="msg" id="msg-bound"></div>
+  </div>
+
+  <!-- ── Step 1: 选择服务器 ─────────────────────────────── -->
+  <div class="step" id="step-server">
     <div class="step-title"><span>1/4</span> 选择服务器</div>
     <div class="options">
       <button class="option-btn" data-value="cn" onclick="selectServer('cn', this)">
@@ -232,10 +368,13 @@
     <div class="msg" id="msg-server"></div>
   </div>
 
-  <!-- Step 2: 选择登录方式 -->
+  <!-- ── Step 2: 选择登录方式 ───────────────────────────── -->
   <div class="step" id="step-method">
     <div class="step-title"><span>2/4</span> 选择登录方式</div>
     <div class="options">
+      <button class="option-btn recommended" onclick="selectMethod('token', this)">
+        <span class="option-icon">🎫</span> Token 绑定（社区+抽卡）
+      </button>
       <button class="option-btn" onclick="selectMethod('sms', this)">
         <span class="option-icon">📱</span> 手机验证码登录
       </button>
@@ -247,7 +386,26 @@
     <div class="back-link" onclick="goBack('server')">← 返回选择服务器</div>
   </div>
 
-  <!-- Step 3a: SMS 验证码 -->
+  <!-- ── Step 3a: Token 输入 ───────────────────────────── -->
+  <div class="step" id="step-token">
+    <div class="step-title"><span>3/4</span> Token 绑定</div>
+    <p class="hint">
+      支持<strong> BBS WebToken</strong> 或 <strong>游戏 AccessToken</strong>，自动识别<br>
+      AccessToken 可同时用于社区和抽卡记录（推荐）
+    </p>
+    <div class="input-group">
+      <label>Token</label>
+      <input type="text" id="token-value" placeholder="粘贴 Token 到这里">
+    </div>
+    <button class="btn btn-primary" id="btn-token-login" onclick="verifyToken()">验证并登录</button>
+    <div class="msg" id="msg-token"></div>
+    <div class="token-info">
+      获取方式：PC端搜索 Player.log 中的 access_token；BBS WebToken 可从浏览器 F12 → Network → 请求头 Authorization 获取
+    </div>
+    <div class="back-link" onclick="goBack('method')">← 返回选择方式</div>
+  </div>
+
+  <!-- ── Step 3b: SMS 验证码 ────────────────────────────── -->
   <div class="step" id="step-sms">
     <div class="step-title"><span>3/4</span> 手机验证码登录</div>
     <div class="input-group">
@@ -266,7 +424,7 @@
     <div class="back-link" onclick="goBack('method')">← 返回选择方式</div>
   </div>
 
-  <!-- Step 3b: 密码登录 -->
+  <!-- ── Step 3c: 密码登录 ──────────────────────────────── -->
   <div class="step" id="step-password">
     <div class="step-title"><span>3/4</span> 账号密码登录</div>
     <div class="input-group">
@@ -285,8 +443,21 @@
   <div class="user-id">你的账号: {{ user_id }}</div>
 </div>
 
+<!-- 删除确认弹窗 -->
+<div class="confirm-overlay" id="delete-confirm" style="display:none;">
+  <div class="confirm-box">
+    <p>确定要删除绑定吗？<br><small style="color:rgba(255,255,255,0.4);">自动签到等社区功能将停止</small></p>
+    <div class="btns">
+      <button class="btn btn-secondary" onclick="hideDeleteConfirm()">取消</button>
+      <button class="btn btn-primary" style="background:#d23c32;" onclick="deleteBinding()">确认删除</button>
+    </div>
+  </div>
+</div>
+
 <script>
   const TOKEN = "{{ token }}";
+  const HAS_BINDING = {{ has_binding }};
+  const BIND_HAS_GAME_TOKEN = {{ bind_has_game_token }};
   let selectedServer = "";
   let selectedMethod = "";
 
@@ -310,14 +481,73 @@
   }
 
   function goBack(to) {
-    if (to === "server") { showStep("server"); }
-    else if (to === "method") { showStep("method"); }
+    if (to === "server") showStep("server");
+    else if (to === "method") showStep("method");
   }
 
   function setMsg(id, text, type) {
     const el = document.getElementById(id);
     if (el) { el.textContent = text; el.className = "msg " + (type || ""); }
   }
+
+  // ── 初始化 ────────────────────────────────────────────
+
+  function init() {
+    if (HAS_BINDING) {
+      showStep("bound");
+      const badge = document.getElementById("gacha-badge");
+      if (BIND_HAS_GAME_TOKEN) {
+        badge.innerHTML = '<span class="badge badge-full">已解锁</span>';
+      } else {
+        badge.innerHTML = '<span class="badge badge-partial">仅社区</span>';
+        document.getElementById("upgrade-section").style.display = "block";
+      }
+    } else {
+      showStep("server");
+    }
+  }
+
+  // ── 已绑定用户操作 ────────────────────────────────────
+
+  function startRelogin() {
+    setMsg("msg-bound", "", "");
+    showStep("server");
+  }
+
+  async function upgradeToken() {
+    const val = document.getElementById("upgrade-token").value.trim();
+    if (!val) { setMsg("msg-upgrade", "请输入 Token", "error"); return; }
+    setMsg("msg-upgrade", "正在验证...", "info");
+    const r = await api("upgrade_token", {token_value: val});
+    if (r.success) {
+      setMsg("msg-upgrade", r.msg, "success");
+      document.getElementById("upgrade-token").value = "";
+      document.getElementById("gacha-badge").innerHTML = '<span class="badge badge-full">已解锁</span>';
+      document.getElementById("upgrade-section").style.display = "none";
+    } else {
+      setMsg("msg-upgrade", r.msg, "error");
+    }
+  }
+
+  function showDeleteConfirm() {
+    document.getElementById("delete-confirm").style.display = "flex";
+  }
+
+  function hideDeleteConfirm() {
+    document.getElementById("delete-confirm").style.display = "none";
+  }
+
+  async function deleteBinding() {
+    hideDeleteConfirm();
+    const r = await api("delete_binding");
+    if (r.success) {
+      location.reload();
+    } else {
+      setMsg("msg-bound", r.msg, "error");
+    }
+  }
+
+  // ── 登录流程 ──────────────────────────────────────────
 
   async function selectServer(srv, btn) {
     document.querySelectorAll("#step-server .option-btn").forEach(b => b.classList.remove("selected"));
@@ -340,10 +570,26 @@
     const r = await api("select_method", {method});
     if (r.success) {
       if (method === "sms") showStep("sms");
+      else if (method === "token") showStep("token");
       else showStep("password");
     }
   }
 
+  // Token 登录
+  async function verifyToken() {
+    const val = document.getElementById("token-value").value.trim();
+    if (!val) { setMsg("msg-token", "请输入 Token", "error"); return; }
+    setMsg("msg-token", "正在验证...", "info");
+    const r = await api("verify_token", {token_value: val});
+    if (r.success) {
+      setMsg("msg-token", r.msg, "success");
+      document.getElementById("btn-token-login").disabled = true;
+    } else {
+      setMsg("msg-token", r.msg, "error");
+    }
+  }
+
+  // SMS
   async function sendSms() {
     const phone = document.getElementById("sms-phone").value.trim();
     if (!/^1[3-9]\d{9}$/.test(phone)) {
@@ -387,6 +633,7 @@
     }
   }
 
+  // Password
   async function verifyPassword() {
     const account = document.getElementById("pwd-account").value.trim();
     const password = document.getElementById("pwd-password").value;
@@ -401,6 +648,8 @@
       setMsg("msg-password", r.msg, "error");
     }
   }
+
+  init();
 </script>
 </body>
 </html>

@@ -110,6 +110,12 @@ async def login_by_password(server: str, account: str, password: str) -> str:
     return data["account"]["token"]
 
 
+async def login_by_game_token(server: str, game_token: str) -> str:
+    """游戏 AccessToken → webToken（/login/game_skip）"""
+    data = await _post(server, "/login/game_skip", {"game_token": game_token})
+    return data["account"]["token"]
+
+
 # ── 用户信息 ─────────────────────────────────────────────────
 
 async def get_user_info(server: str, web_token: str) -> dict:
