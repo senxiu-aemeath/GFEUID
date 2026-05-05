@@ -6,4 +6,4 @@ from .gfe_config import GfeConfig
 
 sv_gfe_config = SV("GFE配置", priority=3)
 
-PREFIX = get_plugin_available_prefix("GFEuid")
+PREFIX = get_plugin_available_prefix("gfeuid")

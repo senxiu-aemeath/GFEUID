@@ -6,8 +6,8 @@ from gsuid_core.sv import SL, Plugins
 from gsuid_core.logger import logger
 from gsuid_core.data_store import get_res_path
 
-if "GFEuid" not in SL.plugins:
-    Plugins(name="GFEuid", force_prefix=["gfe"], allow_empty_prefix=False)
+if "gfeuid" not in SL.plugins:
+    Plugins(name="gfeuid", force_prefix=["gfe"], allow_empty_prefix=False)
 
 from .utils.resource.RESOURCE_PATH import init_dir, MAIN_PATH
 

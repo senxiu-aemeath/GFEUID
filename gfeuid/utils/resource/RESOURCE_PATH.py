@@ -5,7 +5,7 @@ from jinja2 import Environment, FileSystemLoader
 
 from gsuid_core.data_store import get_res_path
 
-MAIN_PATH = get_res_path() / "GFEuid"
+MAIN_PATH = get_res_path() / "gfeuid"
 sys.path.append(str(MAIN_PATH))
 
 # 配置文件
