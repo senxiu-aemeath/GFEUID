@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1c24;
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+    color: #d0d0d0;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    width: 800px;
+    padding: 24px 28px 20px;
+    background: #1a1c24;
+    border: 1px solid rgba(230, 180, 80, 0.15);
+    border-radius: 8px;
+  }
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px; padding-bottom: 14px;
+    border-bottom: 1px solid rgba(230, 180, 80, 0.2);
+  }
+  .header-title { font-size: 22px; font-weight: 700; color: #e6b450; }
+  .header-user { font-size: 13px; color: #888; text-align: right; }
+  .header-user .name { color: #d0d0d0; font-weight: 600; }
+  .item-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+  }
+  .item-card {
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(255, 255, 255, 0.035);
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 6px; padding: 12px;
+    position: relative;
+  }
+  .item-card.personal { border-color: rgba(230, 180, 80, 0.3); background: rgba(230, 180, 80, 0.05); }
+  .item-card .icon { width: 56px; height: 56px; border-radius: 6px; flex-shrink: 0; }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-size: 15px; font-weight: 600; color: #e8e8e8; }
+  .item-id { font-size: 11px; color: #666; margin-top: 2px; }
+  .item-meta { display: flex; justify-content: space-between; align-items: center; margin-top: 6px; }
+  .item-score { font-size: 13px; color: #e6b450; font-weight: 600; }
+  .item-stock { font-size: 12px; color: #999; }
+  .item-stock.low { color: #d23c32; }
+  .badge {
+    position: absolute; top: -1px; right: -1px;
+    font-size: 11px; padding: 2px 8px;
+    border-radius: 0 6px 0 6px;
+  }
+  .badge.personal { background: rgba(230, 180, 80, 0.85); color: #1a1c24; }
+  .badge.global { background: rgba(255, 255, 255, 0.15); color: #aaa; }
+  .footer {
+    margin-top: 18px; padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 12px; color: #777;
+  }
+  .footer .star { color: #e6b450; }
+  .cycle-tag {
+    display: inline-block; font-size: 10px; padding: 1px 6px;
+    border-radius: 3px; margin-left: 4px;
+    background: rgba(255,255,255,0.08); color: #888;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <span class="header-title">可兑换物品列表</span>
+    <span class="header-user">{{ nickname }} <span class="name">#{{ uid }}</span></span>
+  </div>
+
+  <div class="item-grid">
+  {% for item in items %}
+    <div class="item-card{% if item.is_personal %} personal{% endif %}">
+      <img class="icon" src="{{ item.icon_b64 }}" alt="">
+      <div class="item-info">
+        <div class="item-name">{{ item.name }}<span class="cycle-tag">{{ item.cycle }}</span></div>
+        <div class="item-id">ID: {{ item.id }}</div>
+        <div class="item-meta">
+          <span class="item-score">{{ item.score }} 积分</span>
+          <span class="item-stock{% if item.remaining == 0 %} low{% endif %}">
+            {% if item.remaining > 0 %}剩余: {{ item.remaining }}{% else %}已兑完{% endif %}
+          </span>
+        </div>
+      </div>
+      {% if item.is_personal %}<span class="badge personal">个人</span>{% elif item.is_global %}<span class="badge global">全局</span>{% endif %}
+    </div>
+  {% endfor %}
+  </div>
+
+  <div class="footer">
+    <span class="star">★</span> 个人兑换: {{ personal_display }} &nbsp;&nbsp;
+    <span class="star">☆</span> 全局默认: {{ global_display }}
+  </div>
+</div>
+</body>
+</html>

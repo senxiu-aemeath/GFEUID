@@ -3,8 +3,10 @@
 from gsuid_core.sv import SV
 from gsuid_core.bot import Bot
 from gsuid_core.models import Event
+from gsuid_core.segment import MessageSegment
 
 from ..gfe_config import PREFIX
+from ..utils.render_utils import PLAYWRIGHT_AVAILABLE
 
 sv_gfe_help = SV("GFE帮助", priority=1)
 
@@ -14,6 +16,13 @@ sv_gfe_help = SV("GFE帮助", priority=1)
     block=True,
 )
 async def send_help(bot: Bot, ev: Event):
+    if PLAYWRIGHT_AVAILABLE:
+        from .draw_help import draw_help_image
+        img_bytes = await draw_help_image(PREFIX)
+        if img_bytes:
+            await bot.send(MessageSegment.image(img_bytes))
+            return
+
     await bot.send(
         f"━━━━ GFEuid · 少前2插件 ━━━━\n"
         f"\n"

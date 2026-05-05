@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1c24;
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+    color: #d0d0d0;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    width: 800px;
+    padding: 24px 28px 20px;
+    background: #1a1c24;
+    border: 1px solid rgba(230, 180, 80, 0.15);
+    border-radius: 8px;
+  }
+  .banner {
+    text-align: center; margin-bottom: 22px; padding-bottom: 18px;
+    border-bottom: 1px solid rgba(230, 180, 80, 0.2);
+  }
+  .banner h1 { font-size: 26px; font-weight: 800; color: #e6b450; margin-bottom: 4px; }
+  .banner .subtitle { font-size: 13px; color: #666; }
+
+  .category { margin-bottom: 20px; }
+  .cat-header {
+    display: flex; align-items: center; gap: 10px;
+    padding: 6px 0; margin-bottom: 10px;
+    border-left: 3px solid #e6b450; padding-left: 10px;
+  }
+  .cat-icon { width: 28px; height: 28px; border-radius: 4px; flex-shrink: 0; }
+  .cat-name { font-size: 16px; font-weight: 700; color: #e8e8e8; }
+
+  .cmd-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+  .cmd-card {
+    display: flex; align-items: flex-start; gap: 10px;
+    background: rgba(255, 255, 255, 0.025);
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    border-radius: 5px; padding: 10px 12px;
+  }
+  .cmd-icon { width: 40px; height: 40px; border-radius: 5px; flex-shrink: 0; }
+  .cmd-info { flex: 1; min-width: 0; }
+  .cmd-name { font-size: 14px; font-weight: 600; color: #e0e0e0; margin-bottom: 3px; }
+  .cmd-desc { font-size: 11px; color: #777; margin-bottom: 4px; }
+  .cmd-eg {
+    font-size: 11px; font-family: 'SF Mono', 'Fira Code', 'Cascadia Code', monospace;
+    color: #e6b450; background: rgba(230, 180, 80, 0.08);
+    padding: 1px 6px; border-radius: 3px; display: inline-block;
+  }
+
+  .footer {
+    margin-top: 18px; padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 11px; color: #555; text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="banner">
+    <h1>GFEuid</h1>
+    <div class="subtitle">少女前线2: 追放 · 社区工具</div>
+  </div>
+
+  {% for cat in categories %}
+  <div class="category">
+    <div class="cat-header" style="border-left-color: rgb{{ cat.color }}">
+      <img class="cat-icon" src="{{ cat.icon_b64 }}" alt="">
+      <span class="cat-name">{{ cat.name }}</span>
+    </div>
+    <div class="cmd-grid">
+      {% for cmd in cat.items %}
+      <div class="cmd-card">
+        <img class="cmd-icon" src="{{ cmd.icon_b64 }}" alt="">
+        <div class="cmd-info">
+          <div class="cmd-name">{{ cmd.name }}</div>
+          <div class="cmd-desc">{{ cmd.desc }}</div>
+          <span class="cmd-eg">{{ cmd.eg }}</span>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  {% endfor %}
+
+  <div class="footer">v{{ version }} · 前缀: {{ prefix }}</div>
+</div>
+</body>
+</html>

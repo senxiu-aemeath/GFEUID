@@ -138,6 +138,12 @@ async def one_click_community(user: GfeUser) -> dict:
         result["sign_ok"] = sign_result.get("ok", False)
         if result["sign_ok"]:
             result["sign_item"] = sign_result.get("item_name", "")
+            result["sign_detail"] = {
+                "item_name": sign_result.get("item_name", ""),
+                "item_count": sign_result.get("item_count", 0),
+                "exp": sign_result.get("exp", 0),
+                "score": sign_result.get("score", 0),
+            }
         elif not result["error"]:
             result["error"] = sign_result.get("error", "")
 

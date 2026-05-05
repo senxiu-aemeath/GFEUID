@@ -10,10 +10,12 @@ from gsuid_core.models import Event
 from gsuid_core.config import core_config
 from gsuid_core.logger import logger
 from gsuid_core.aps import scheduler
+from gsuid_core.segment import MessageSegment
 
 from .sign import do_sign, one_click_community, resolve_exchange_items
 from ..utils.database.models import GfeUser
 from ..utils.gfe_api import get_exchange_list as api_get_exchange_list
+from ..utils.render_utils import PLAYWRIGHT_AVAILABLE
 from ..gfe_config.gfe_config import GfeConfig
 
 sv_gfe_sign = SV("GFE社区", priority=5)
@@ -64,6 +66,13 @@ async def cmd_community(bot: Bot, ev: Event):
 
     await bot.send("[GF2] 正在执行一键社区...", at_sender=_at(ev))
     result = await one_click_community(user)
+
+    if PLAYWRIGHT_AVAILABLE:
+        from .draw_exchange import draw_exchange_result
+        img_bytes = await draw_exchange_result(result)
+        if img_bytes:
+            await bot.send(MessageSegment.image(img_bytes))
+            return
 
     msgs = [f"[GF2] 一键社区完成 | {result['nickname']}({result['uid']})"]
     if result["sign_ok"]:
@@ -131,6 +140,13 @@ async def cmd_exchange_list(bot: Bot, ev: Event):
     personal_items = resolve_exchange_items(user)
     global_conf = GfeConfig.get_config("GfeDefaultExchangeItems")
     global_items = [str(i) for i in global_conf.data] if global_conf and global_conf.data else []
+
+    if PLAYWRIGHT_AVAILABLE:
+        from .draw_exchange import draw_exchange_list
+        img_bytes = await draw_exchange_list(user, exchange_list, personal_items, global_items)
+        if img_bytes:
+            await bot.send(MessageSegment.image(img_bytes))
+            return
 
     lines = ["[GF2] 可兑换物品列表", ""]
     for item in exchange_list:

@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: #1a1c24;
+    font-family: 'PingFang SC', 'Microsoft YaHei', 'Noto Sans CJK SC', sans-serif;
+    color: #d0d0d0;
+    -webkit-font-smoothing: antialiased;
+  }
+  .container {
+    width: 800px;
+    padding: 24px 28px 20px;
+    background: #1a1c24;
+    border: 1px solid rgba(230, 180, 80, 0.15);
+    border-radius: 8px;
+  }
+  .header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 20px; padding-bottom: 14px;
+    border-bottom: 1px solid rgba(230, 180, 80, 0.2);
+  }
+  .header-title { font-size: 22px; font-weight: 700; color: #e6b450; }
+  .header-user { font-size: 13px; color: #888; text-align: right; }
+  .header-user .name { color: #d0d0d0; font-weight: 600; }
+
+  .section { margin-bottom: 16px; }
+  .section-title { font-size: 14px; font-weight: 600; color: #e6b450; margin-bottom: 8px; }
+
+  .result-row {
+    display: flex; align-items: center; gap: 12px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-left: 3px solid rgba(255, 255, 255, 0.1);
+    border-radius: 4px; padding: 12px 14px;
+    margin-bottom: 6px;
+  }
+  .result-row.success { border-left-color: rgba(80, 200, 80, 0.6); background: rgba(80, 200, 80, 0.04); }
+  .result-row.fail { border-left-color: rgba(210, 60, 50, 0.5); background: rgba(210, 60, 50, 0.04); }
+  .result-row.highlight { border-left-color: rgba(230, 180, 80, 0.5); background: rgba(230, 180, 80, 0.04); }
+
+  .row-icon { width: 32px; height: 32px; border-radius: 4px; flex-shrink: 0; }
+  .row-content { flex: 1; }
+  .row-label { font-size: 14px; color: #ccc; }
+  .row-detail { font-size: 12px; color: #777; margin-top: 2px; }
+  .row-result { font-size: 13px; color: #e6b450; font-weight: 600; white-space: nowrap; }
+
+  .error-msg {
+    margin-top: 10px; padding: 10px 14px;
+    background: rgba(210, 60, 50, 0.08);
+    border: 1px solid rgba(210, 60, 50, 0.2);
+    border-radius: 4px;
+    font-size: 12px; color: #d23c32;
+  }
+  .footer {
+    margin-top: 18px; padding-top: 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.06);
+    font-size: 11px; color: #555; text-align: center;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <span class="header-title">一键社区结果</span>
+    <span class="header-user">{{ nickname }} <span class="name">#{{ uid }}</span></span>
+  </div>
+
+  <div class="result-row {% if sign_ok %}success{% else %}fail{% endif %}">
+    <img class="row-icon" src="{{ icons.sign }}" alt="">
+    <div class="row-content">
+      <div class="row-label">签到</div>
+      <div class="row-detail">
+        {% if sign_ok %}
+          {{ sign_item }} x{{ sign_item_count }} · 经验 +{{ sign_exp }} · 积分 +{{ sign_score }}
+        {% else %}
+          签到失败或跳过
+        {% endif %}
+      </div>
+    </div>
+    <span class="row-result">{% if sign_ok %}成功{% else %}失败{% endif %}</span>
+  </div>
+
+  <div class="result-row highlight">
+    <img class="row-icon" src="{{ icons.task }}" alt="">
+    <div class="row-content">
+      <div class="row-label">社区任务</div>
+      <div class="row-detail">浏览 / 点赞 / 分享</div>
+    </div>
+    <span class="row-result">完成 {{ tasks_done }} 项</span>
+  </div>
+
+  <div class="result-row {% if exchange_done > 0 %}success{% endif %}">
+    <img class="row-icon" src="{{ icons.exchange }}" alt="">
+    <div class="row-content">
+      <div class="row-label">物品兑换</div>
+      <div class="row-detail">
+        {% if exchange_done > 0 %}
+          {% for item in exchange_items %}{{ item }}{% if not loop.last %}、{% endif %}{% endfor %}
+        {% else %}
+          无兑换或未开启
+        {% endif %}
+      </div>
+    </div>
+    <span class="row-result">兑换 {{ exchange_done }} 件</span>
+  </div>
+
+  {% if error %}
+  <div class="error-msg">提示: {{ error }}</div>
+  {% endif %}
+
+  <div class="footer">GFEuid · 少女前线2: 追放</div>
+</div>
+</body>
+</html>
