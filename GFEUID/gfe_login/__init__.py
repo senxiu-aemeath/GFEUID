@@ -16,12 +16,6 @@ sv_gfe_login = SV("GFE登录")
     block=True,
 )
 async def handle_login(bot: Bot, ev: Event):
-    if ev.group_id:
-        await bot.send(
-            f"[GF2] 请私聊 Bot 发送【{PREFIX}登录】进行登录绑定",
-            at_sender=True,
-        )
-        return
     return await page_login(bot, ev)
 
 
@@ -33,7 +27,7 @@ async def bind_status(bot: Bot, ev: Event):
     user = await GfeUser.select_by_user(ev.user_id, ev.bot_id)
     if not user or not user.web_token:
         await bot.send(
-            f"[GF2] 未绑定 GF2 账号\n请私聊 Bot 发送【{PREFIX}登录】",
+            f"[GF2] 未绑定 GF2 账号\n请发送【{PREFIX}登录】",
             at_sender=True if ev.group_id else False,
         )
         return
