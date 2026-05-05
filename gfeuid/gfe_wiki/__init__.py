@@ -178,7 +178,7 @@ async def send_guide(bot: Bot, ev: Event):
 
     imgs = await get_guide_images(formal_name)
     if not imgs:
-        await bot.send(f"[GF2] 未找到「{formal_name}」的攻略图片\n请在 data/gfeuid/guide/{formal_name}/ 目录下放入攻略图片")
+        await bot.send(f"[GF2] 未找到「{formal_name}」的攻略图片\n请在 data/GFEUID/guide/{formal_name}/ 目录下放入攻略图片")
         return
 
     for img in imgs:
