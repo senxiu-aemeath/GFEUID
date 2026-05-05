@@ -10,7 +10,7 @@ sv_gfe_help = SV("GFE帮助", priority=1)
 
 
 @sv_gfe_help.on_fullmatch(
-    (f"{PREFIX}帮助", f"{PREFIX}help", f"{PREFIX}命令", f"{PREFIX}菜单"),
+    ("帮助", "help", "命令", "菜单"),
     block=True,
 )
 async def send_help(bot: Bot, ev: Event):

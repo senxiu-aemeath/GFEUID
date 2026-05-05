@@ -20,7 +20,7 @@ async def handle_login(bot: Bot, ev: Event):
 
 
 @sv_gfe_login.on_fullmatch(
-    (f"{PREFIX}绑定状态", f"{PREFIX}绑定信息"),
+    ("绑定状态", "绑定信息"),
     block=True,
 )
 async def bind_status(bot: Bot, ev: Event):
@@ -52,7 +52,7 @@ async def bind_status(bot: Bot, ev: Event):
 
 
 @sv_gfe_login.on_fullmatch(
-    (f"{PREFIX}删除绑定", f"{PREFIX}解绑", f"{PREFIX}删除token"),
+    ("删除绑定", "解绑", "删除token"),
     block=True,
 )
 async def delete_bind(bot: Bot, ev: Event):

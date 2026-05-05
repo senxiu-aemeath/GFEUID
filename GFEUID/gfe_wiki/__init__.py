@@ -103,7 +103,7 @@ def _find_weapon(name: str, weapons: dict[str, str]) -> tuple | None:
 # ── 角色 Wiki 查询：gfe<角色名>技能/命座/wiki/介绍/图鉴 ────
 
 @sv_gfe_wiki.on_regex(
-    rf"^{re.escape(PREFIX)}(?P<char>[^技能命座wiki介绍图鉴jn mzj]+)(?:技能|jn|命座|mz|wiki|介绍|圖鑑|图鉴|jieshao|jies)?$",
+    rf"^(?P<char>[^技能命座wiki介绍图鉴jn mzj]+)(?:技能|jn|命座|mz|wiki|介绍|圖鑑|图鉴|jieshao|jies)?$",
     block=True,
 )
 async def send_doll_wiki(bot: Bot, ev: Event):
@@ -129,7 +129,7 @@ async def send_doll_wiki(bot: Bot, ev: Event):
 # ── 武器 Wiki 查询：gfe<武器名>武器 ────────────────────────
 
 @sv_gfe_wiki.on_regex(
-    rf"^{re.escape(PREFIX)}(?P<weapon>.+)武器$",
+    rf"^(?P<weapon>.+)武器$",
     block=True,
 )
 async def send_weapon_wiki(bot: Bot, ev: Event):
@@ -164,7 +164,7 @@ async def send_weapon_wiki(bot: Bot, ev: Event):
 # ── 攻略查询：gfe<角色名>攻略 ──────────────────────────────
 
 @sv_gfe_wiki.on_regex(
-    rf"^{re.escape(PREFIX)}(?P<char>.+?)(?:攻略|gl|guide)$",
+    rf"^(?P<char>.+?)(?:攻略|gl|guide)$",
     block=True,
 )
 async def send_guide(bot: Bot, ev: Event):
@@ -188,7 +188,7 @@ async def send_guide(bot: Bot, ev: Event):
 # ── 列表 ─────────────────────────────────────────────────
 
 @sv_gfe_wiki.on_fullmatch(
-    (f"{PREFIX}角色列表", f"{PREFIX}角色一览", f"{PREFIX}dolls"),
+    ("角色列表", "角色一览", "dolls"),
     block=True,
 )
 async def send_doll_list(bot: Bot, ev: Event):
@@ -205,7 +205,7 @@ async def send_doll_list(bot: Bot, ev: Event):
 
 
 @sv_gfe_wiki.on_fullmatch(
-    (f"{PREFIX}武器列表", f"{PREFIX}武器一览", f"{PREFIX}weapons"),
+    ("武器列表", "武器一览", "weapons"),
     block=True,
 )
 async def send_weapon_list(bot: Bot, ev: Event):
@@ -224,7 +224,7 @@ async def send_weapon_list(bot: Bot, ev: Event):
 # ── Master：刷新缓存 ─────────────────────────────────────
 
 @sv_gfe_wiki.on_fullmatch(
-    (f"{PREFIX}刷新wiki", f"{PREFIX}清除wiki缓存"),
+    ("刷新wiki", "清除wiki缓存"),
     block=True,
 )
 async def refresh_wiki(bot: Bot, ev: Event):

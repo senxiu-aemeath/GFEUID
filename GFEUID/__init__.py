@@ -48,4 +48,6 @@ try:
 except Exception as e:
     logger.error(f"[GFEuid] gfe_help 导入失败: {e}")
 
-logger.info("[GFEuid] 插件初始化完成")
+from .version import __version__
+
+logger.info(f"[GFEuid] 插件初始化完成 v{__version__}")
