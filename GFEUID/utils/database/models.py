@@ -58,6 +58,7 @@ class GfeBind(Bind, table=True):
 
 class GfeUser(User, table=True):
     __table_args__: Dict[str, Any] = {"extend_existing": True}
+    cookie: str = Field(default="", title="Cookie")
     uid: str = Field(default="", title="GF2游戏UID")
     nickname: str = Field(default="", title="游戏昵称")
     web_token: str = Field(default="", title="BBS WebToken")
