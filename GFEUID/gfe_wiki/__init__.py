@@ -226,9 +226,13 @@ async def send_weapon_list(bot: Bot, ev: Event):
 @sv_gfe_wiki.on_fullmatch(
     (f"{PREFIX}刷新wiki", f"{PREFIX}清除wiki缓存"),
     block=True,
-    permission="master",
 )
 async def refresh_wiki(bot: Bot, ev: Event):
+    from gsuid_core.config import core_config
+    config_masters = core_config.get_config("masters") or []
+    if str(ev.user_id) not in config_masters:
+        await bot.send(f"[GF2] 仅 Bot 主人可使用此命令")
+        return
     global _wiki_dolls, _wiki_weapons
     _wiki_dolls = None
     _wiki_weapons = None
