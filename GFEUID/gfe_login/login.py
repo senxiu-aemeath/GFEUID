@@ -58,17 +58,16 @@ async def _get_url() -> tuple[str, bool]:
 
 
 async def _send_login_msg(bot: Bot, ev: Event, url: str):
-    at_sender = True
+    at_sender = True if ev.group_id else False
 
     if GfeConfig.get_config("GfeLoginForward").data:
         im = [
-            f"[GF2] 您的ID为【{ev.user_id}】",
-            "请点击链接登录 GF2 账号",
-            url,
-            "3分钟内有效",
+            MessageSegment.text(f"[GF2] 您的ID为【{ev.user_id}】\n请点击链接登录 GF2 账号"),
+            MessageSegment.text(url),
+            MessageSegment.text("3分钟内有效"),
         ]
         if not ev.group_id and ev.bot_id == "onebot":
-            await bot.send("\n".join(im))
+            await bot.send(f"[GF2] 您的ID为【{ev.user_id}】\n请点击链接登录 GF2 账号\n{url}\n3分钟内有效")
         else:
             await bot.send(MessageSegment.node(im))
     else:
