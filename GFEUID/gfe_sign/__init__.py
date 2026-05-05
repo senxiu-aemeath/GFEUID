@@ -16,7 +16,7 @@ from ..utils.database.models import GfeUser
 from ..utils.gfe_api import get_exchange_list as api_get_exchange_list
 from ..gfe_config.gfe_config import GfeConfig
 
-sv_gfe_sign = SV("GFE社区", priority=10)
+sv_gfe_sign = SV("GFE社区", priority=5)
 _log = logging.getLogger("gfeuid.gfe_sign")
 
 

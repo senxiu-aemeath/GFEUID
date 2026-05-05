@@ -48,6 +48,12 @@ try:
 except Exception as e:
     logger.error(f"[GFEuid] gfe_help 导入失败: {e}")
 
+try:
+    from .gfe_sign import sv_gfe_sign  # noqa: F401
+    logger.info("[GFEuid] gfe_sign 导入成功")
+except Exception as e:
+    logger.error(f"[GFEuid] gfe_sign 导入失败: {e}")
+
 from .version import __version__
 
 logger.info(f"[GFEuid] 插件初始化完成 v{__version__}")

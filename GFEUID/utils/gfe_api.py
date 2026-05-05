@@ -122,3 +122,57 @@ async def get_user_info(server: str, web_token: str) -> dict:
         "score": user.get("score", 0),
         "level": user.get("level", 0),
     }
+
+
+# ── 签到 ─────────────────────────────────────────────────────
+
+async def sign_in(server: str, web_token: str) -> dict:
+    """签到 → {itemName, itemCount, exp, score}"""
+    return await _post(server, "/community/task/sign_in", None, web_token)
+
+
+# ── 社区任务 ──────────────────────────────────────────────────
+
+async def get_task_list(server: str, web_token: str) -> dict:
+    """获取当前任务列表 → {dailyTask, moreTask}"""
+    return await _get(server, "/community/task/get_current_task_list", None, web_token)
+
+
+async def get_topic_list(server: str, web_token: str) -> dict:
+    """获取最新帖子列表 → {list: [...]}"""
+    return await _get(server, "/community/topic/list", {
+        "last_tid": 0,
+        "pub_time": 0,
+        "reply_time": 0,
+        "hot_value": 0,
+        "sort_type": 2,
+        "category_id": 5,
+        "query_type": 1,
+    }, web_token)
+
+
+async def view_topic(server: str, web_token: str, topic_id: str | int):
+    """浏览帖子"""
+    await _get(server, f"/community/topic/{topic_id}", {"id": str(topic_id)}, web_token)
+
+
+async def like_topic(server: str, web_token: str, topic_id: str | int):
+    """点赞帖子"""
+    await _get(server, f"/community/topic/like/{topic_id}", {"id": str(topic_id)}, web_token)
+
+
+async def share_topic(server: str, web_token: str, topic_id: str | int):
+    """分享帖子"""
+    await _get(server, f"/community/topic/share/{topic_id}", {"id": str(topic_id)}, web_token)
+
+
+# ── 兑换 ─────────────────────────────────────────────────────
+
+async def get_exchange_list(server: str, web_token: str) -> dict:
+    """获取可兑换物品列表 → {list: [...]}"""
+    return await _get(server, "/community/item/exchange_list", None, web_token)
+
+
+async def exchange(server: str, web_token: str, exchange_id: int):
+    """执行兑换"""
+    await _post(server, "/community/item/exchange", {"exchange_id": exchange_id}, web_token)

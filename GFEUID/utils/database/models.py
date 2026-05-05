@@ -64,6 +64,10 @@ class GfeUser(User, table=True):
     server: str = Field(default="cn", title="服务器(cn/intl)")
     login_type: str = Field(default="", title="登录方式(sms/password)")
     last_bind_time: Optional[int] = Field(default=None, title="最后绑定时间")
+    auto_community: bool = Field(default=True, title="自动社区开关")
+    exchange_enable: bool = Field(default=False, title="自动兑换开关")
+    exchange_items: str = Field(default="[]", title="兑换物品ID列表(JSON)")
+    last_sign_time: Optional[int] = Field(default=None, title="最后签到时间")
 
     @classmethod
     @with_session
@@ -89,3 +93,107 @@ class GfeUser(User, table=True):
         from sqlalchemy import delete
         sql = delete(cls).where(cls.user_id == user_id, cls.bot_id == bot_id)
         await session.execute(sql)
+
+    @classmethod
+    @with_session
+    async def get_all_auto_community_users(
+        cls,
+        session: AsyncSession,
+    ):
+        """获取所有开启自动社区且有有效web_token的用户"""
+        result = await session.execute(
+            select(cls).where(
+                cls.auto_community == True,
+                cls.web_token != "",
+            )
+        )
+        return result.scalars().all()
+
+    @classmethod
+    @with_session
+    async def set_auto_community(
+        cls,
+        session: AsyncSession,
+        user_id: str,
+        bot_id: str,
+        enabled: bool,
+    ):
+        result = await session.execute(
+            select(cls).where(cls.user_id == user_id, cls.bot_id == bot_id)
+        )
+        user = result.scalars().first()
+        if user:
+            user.auto_community = enabled
+            await session.commit()
+
+    @classmethod
+    @with_session
+    async def set_exchange_enable(
+        cls,
+        session: AsyncSession,
+        user_id: str,
+        bot_id: str,
+        enabled: bool,
+    ):
+        result = await session.execute(
+            select(cls).where(cls.user_id == user_id, cls.bot_id == bot_id)
+        )
+        user = result.scalars().first()
+        if user:
+            user.exchange_enable = enabled
+            await session.commit()
+
+    @classmethod
+    @with_session
+    async def set_exchange_items(
+        cls,
+        session: AsyncSession,
+        user_id: str,
+        bot_id: str,
+        items: str,
+    ):
+        result = await session.execute(
+            select(cls).where(cls.user_id == user_id, cls.bot_id == bot_id)
+        )
+        user = result.scalars().first()
+        if user:
+            user.exchange_items = items
+            await session.commit()
+
+    @classmethod
+    @with_session
+    async def update_sign_time(
+        cls,
+        session: AsyncSession,
+        user_id: str,
+        bot_id: str,
+        timestamp: int,
+    ):
+        result = await session.execute(
+            select(cls).where(cls.user_id == user_id, cls.bot_id == bot_id)
+        )
+        user = result.scalars().first()
+        if user:
+            user.last_sign_time = timestamp
+            await session.commit()
+
+
+    @classmethod
+    @with_session
+    async def get_all_users_with_token(
+        cls,
+        session: AsyncSession,
+    ):
+        """获取所有已绑定web_token的用户"""
+        result = await session.execute(
+            select(cls).where(cls.web_token != "")
+        )
+        return result.scalars().all()
+
+
+exec_list = [
+    "ALTER TABLE gfe_user ADD COLUMN auto_community BOOLEAN DEFAULT 1",
+    "ALTER TABLE gfe_user ADD COLUMN exchange_enable BOOLEAN DEFAULT 0",
+    "ALTER TABLE gfe_user ADD COLUMN exchange_items TEXT DEFAULT '[]'",
+    "ALTER TABLE gfe_user ADD COLUMN last_sign_time INTEGER",
+]

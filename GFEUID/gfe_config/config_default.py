@@ -59,4 +59,24 @@ CONFIG_DEFAULT: Dict[str, GSC] = {
         800,
         1920,
     ),
+    "GfeAutoSignCron": GsStrConfig(
+        "自动社区cron表达式",
+        "每日自动一键社区的cron表达式（5字段：分 时 日 月 周）",
+        "0 9 * * *",
+    ),
+    "GfeAutoCommunity": GsBoolConfig(
+        "全局自动社区开关",
+        "关闭后所有用户的自动社区均不执行（总开关）",
+        True,
+    ),
+    "GfeDefaultExchangeItems": GsListStrConfig(
+        "全局默认兑换物品ID",
+        "设置BBS积分默认兑换的物品ID列表，用户可通过 gfe兑换设置 覆盖",
+        [],
+    ),
+    "GfeSignReportGroup": GsStrConfig(
+        "自动社区结果通知群号",
+        "每日自动社区完成后发送汇总消息的群号，留空则不发送",
+        "",
+    ),
 }

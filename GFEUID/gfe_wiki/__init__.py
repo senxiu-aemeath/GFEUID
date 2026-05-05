@@ -100,10 +100,29 @@ def _find_weapon(name: str, weapons: dict[str, str]) -> tuple | None:
     return None
 
 
+# 需要被其他 SV 精确匹配的命令关键字（防御性排除，避免被 wiki 正则吞掉）
+# 每个关键字后加 $ 确保完整匹配，防止 "xxx社区xxx" 这类变体误伤
+_CMD_KW = (
+    r"签到$|sign$|"
+    r"一键社区$|community$|"
+    r"开启自动社区$|关闭自动社区$|开启自动兑换$|关闭自动兑换$|"
+    r"兑换列表$|兑换设置$|"
+    r"自动任务状态$|我的状态$|"
+    r"全部签到$|全部sign$|全部一键社区$|全部community$|"
+    r"帮助$|help$|命令$|菜单$|"
+    r"登录$|登陆$|登入$|login$|dl$|绑定$|"
+    r"绑定状态$|绑定信息$|删除绑定$|解绑$|删除token$|"
+    r"角色列表$|角色一览$|dolls$|"
+    r"武器列表$|武器一览$|weapons$|"
+    r"刷新wiki$|清除wiki缓存$|"
+    r"配置$|config$|设置$|setting$"
+)
+
+
 # ── 角色 Wiki 查询：gfe<角色名>技能/命座/wiki/介绍/图鉴 ────
 
 @sv_gfe_wiki.on_regex(
-    rf"^(?P<char>[^技能命座wiki介绍图鉴jn mzj]+)(?:技能|jn|命座|mz|wiki|介绍|圖鑑|图鉴|jieshao|jies)?$",
+    rf"^(?!{_CMD_KW})(?P<char>.+?)(?:技能|jn|命座|mz|wiki|介绍|圖鑑|图鉴|jieshao|jies)?$",
     block=True,
 )
 async def send_doll_wiki(bot: Bot, ev: Event):
