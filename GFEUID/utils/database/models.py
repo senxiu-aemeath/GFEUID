@@ -192,8 +192,8 @@ class GfeUser(User, table=True):
 
 
 exec_list = [
-    "ALTER TABLE gfe_user ADD COLUMN auto_community BOOLEAN DEFAULT 1",
-    "ALTER TABLE gfe_user ADD COLUMN exchange_enable BOOLEAN DEFAULT 0",
-    "ALTER TABLE gfe_user ADD COLUMN exchange_items TEXT DEFAULT '[]'",
-    "ALTER TABLE gfe_user ADD COLUMN last_sign_time INTEGER",
+    "ALTER TABLE gfeuser ADD COLUMN auto_community BOOLEAN DEFAULT 1",
+    "ALTER TABLE gfeuser ADD COLUMN exchange_enable BOOLEAN DEFAULT 0",
+    "ALTER TABLE gfeuser ADD COLUMN exchange_items TEXT DEFAULT '[]'",
+    "ALTER TABLE gfeuser ADD COLUMN last_sign_time INTEGER",
 ]
